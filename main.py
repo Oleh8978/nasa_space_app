@@ -167,6 +167,22 @@ def detect_seismic_events(sta_lta, threshold, refractory_period=10):
             events.append(0)
     return pd.Series(events, index=sta_lta.index)
 
+def extract_features(data, planet_props):
+    """Extract features from seismic data."""
+    sta_lta = calculate_sta_lta(data)
+    
+    # Dynamic threshold based on statistical properties
+    dynamic_threshold = sta_lta.mean() + (2 * sta_lta.std())
+    events = detect_seismic_events(sta_lta, dynamic_threshold)
+    data['sta_lta'] = sta_lta
+    data['event_detected'] = events
+
+    # Diagnostic Logging
+    logging.info(f"{planet_props['metadata']} STA/LTA - min: {sta_lta.min()}, max: {sta_lta.max()}, mean: {sta_lta.mean()}, std: {sta_lta.std()}")
+    logging.info(f"{planet_props['metadata']} Dynamic Threshold: {dynamic_threshold}")
+
+    return data, events, dynamic_threshold
+
 def main():
     pass
 
