@@ -13,6 +13,14 @@ from imblearn.over_sampling import SMOTE
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
 
+
+def parse_arguments():
+    """Parse command-line arguments to specify the planet."""
+    parser = argparse.ArgumentParser(description='Seismic Event Detection for Mars or Lunar Data')
+    parser.add_argument('planet', choices=['Mars', 'Lunar'], help='Planet to process data for')
+    args = parser.parse_args()
+    return args
+
 def main():
     pass
 
