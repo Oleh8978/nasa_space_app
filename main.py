@@ -237,6 +237,53 @@ def generate_positive_samples(data, window_size=500, overlap=0.5):
     logging.info(f"Generated {len(windows)} positive samples.")
     return pd.DataFrame(windows), pd.Series(labels)
 
+def train_model(X, y):
+    """Train a RandomForestClassifier on the extracted features and labels."""
+    # Check if both classes are present
+    classes = np.unique(y)
+    if len(classes) < 2:
+        logging.error("Insufficient classes for training. Ensure that both positive and negative samples are present.")
+        sys.exit(1)  # Exit the program as training cannot proceed
+
+    # Split the data into training and validation sets with stratification
+    X_train, X_val, y_train, y_val = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y
+    )
+
+    # Handle class imbalance using SMOTE
+    smote = SMOTE(random_state=42)
+    X_train_res, y_train_res = smote.fit_resample(X_train, y_train)
+
+    logging.info(f"After SMOTE, counts of label '1': {sum(y_train_res == 1)}")
+    logging.info(f"After SMOTE, counts of label '0': {sum(y_train_res == 0)}")
+
+    # Scale the features
+    scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train_res)
+    X_val_scaled = scaler.transform(X_val)
+
+    # Train the RandomForest model
+    model = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
+    model.fit(X_train_scaled, y_train_res)
+
+    # Evaluate the model
+    y_pred = model.predict(X_val_scaled)
+    try:
+        y_proba = model.predict_proba(X_val_scaled)[:, 1]
+    except AttributeError:
+        logging.error("Model does not support probability predictions.")
+        y_proba = np.zeros_like(y_pred)
+
+    logging.info(f"Classification Report:\n{classification_report(y_val, y_pred)}")
+    logging.info(f"Confusion Matrix:\n{confusion_matrix(y_val, y_pred)}")
+    try:
+        roc_auc = roc_auc_score(y_val, y_proba)
+        logging.info(f"ROC AUC Score: {roc_auc}")
+    except ValueError:
+        logging.warning("ROC AUC Score cannot be calculated because only one class is present in y_true.")
+
+    return model, scaler
+
 
 def main():
     pass
