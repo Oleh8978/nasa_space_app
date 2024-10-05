@@ -90,7 +90,7 @@ PLANET_CONFIG = {
     "Lunar": {
         "gravity": 1.62,            # m/s²
         "mass": 7.342e22,           # kg
-        "threshold": 2.0,           # May need adjustment
+        "threshold": 2.0,
         "metadata": "12.00.mhz",
         "header_mapping": {
             'time_column': 'time_abs(%Y-%m-%dT%H:%M:%S.%f)',
