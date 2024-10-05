@@ -1,0 +1,66 @@
+{
+    "Mars": {
+        "gravity": 3.721,
+        "mass": 6.4171e23,
+        "threshold": 2.0,
+        "metadata": "02.BHV",
+        "header_mapping": {
+            "time_column": "time(%Y-%m-%dT%H:%M:%S.%f)",
+            "rel_time_column": "rel_time(sec)",
+            "velocity_column": "velocity(c/s)"
+        },
+        "velocity_unit_conversion": 1.0,
+        "training_data_folders": [
+            {
+                "path": "./data/mars/training/data/",
+                "label": 1
+            }
+        ],
+        "test_data_folders": [
+            {
+                "path": "./data/mars/test/data/",
+                "label": 1
+            }
+        ]
+    },
+    "Lunar": {
+        "gravity": 1.62,
+        "mass": 7.342e22,
+        "threshold": 2.0,
+        "metadata": "12.00.mhz",
+        "header_mapping": {
+            "time_column": "time_abs(%Y-%m-%dT%H:%M:%S.%f)",
+            "rel_time_column": "time_rel(sec)",
+            "velocity_column": "velocity(m/s)"
+        },
+        "velocity_unit_conversion": 100.0,
+        "training_data_folders": [
+            {
+                "path": "./data/lunar/training/data/S12_GradeA/",
+                "label": 1
+            }
+        ],
+        "test_data_folders": [
+            {
+                "path": "./data/lunar/test/data/S12_GradeB/",
+                "label": 0
+            },
+            {
+                "path": "./data/lunar/test/data/S15_GradeA/",
+                "label": 1
+            },
+            {
+                "path": "./data/lunar/test/data/S15_GradeB/",
+                "label": 0
+            },
+            {
+                "path": "./data/lunar/test/data/S16_GradeA/",
+                "label": 1
+            },
+            {
+                "path": "./data/lunar/test/data/S16_GradeB/",
+                "label": 0
+            }
+        ]
+    }
+}
