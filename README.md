@@ -123,5 +123,12 @@ The application utilizes Python's built-in logging module to log information, wa
 License
 This project is licensed under the MIT License. See the LICENSE file for details.
 
+example of output for Mars:
+
+
+![127 0 0 1_5500_html_plots_Mars_Mars_seismic_data_plot_XB ELYSE 02 BHV 2022-01-02HR04_evid0006 html](https://github.com/user-attachments/assets/1b992c14-f821-48aa-a3b7-77ad7ac910c6)
+
+Folder structure for the files as it shown in example:
+<img width="200" alt="Screenshot 2024-10-06 at 01 16 31" src="https://github.com/user-attachments/assets/34b4530b-357e-41ec-88cc-bbecbf238799">
 
 
