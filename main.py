@@ -13,6 +13,8 @@ from imblearn.over_sampling import SMOTE
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
 
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def parse_arguments():
     """Parse command-line arguments to specify the planet."""
