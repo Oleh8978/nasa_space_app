@@ -377,7 +377,78 @@ def plot_seismic_data_per_file(data, events, dynamic_threshold, filename, planet
 
 
 def main():
-    pass
+    args = parse_arguments()
+    planet = args.planet
+    planet_props = PLANET_CONFIG[planet]
+
+    # Load training data
+    training_data = []
+    training_files = []
+    for folder in planet_props['training_data_folders']:
+        if not os.path.exists(folder['path']):
+            logging.warning(f"Training folder does not exist: {folder['path']}")
+            continue
+        for filename in os.listdir(folder['path']):
+            if filename.endswith('.csv'):
+                filepath = os.path.join(folder['path'], filename)
+                df, label = load_data(
+                    filepath,
+                    folder['label'],
+                    planet_props['header_mapping'],
+                    planet_props.get('velocity_unit_conversion', 1.0)
+                )
+                if df is not None:
+                    df_processed = preprocess_data(df, planet_props)
+                    df_features, events, dynamic_threshold = extract_features(df_processed, planet_props)
+                    training_data.append((df_features, events, dynamic_threshold, filename))
+                    training_files.append(filename)
+
+    if not training_data:
+        logging.error("No training data loaded. Exiting.")
+        sys.exit(1)
+
+    # Initialize lists to collect features and labels for model training
+    all_features = []
+    all_labels = []
+
+    # Plot data for each file and collect samples
+    for df_features, events, dynamic_threshold, filename in training_data:
+        # Plot seismic data per file with subsampling
+        plot_seismic_data_per_file(df_features, events, dynamic_threshold, filename, planet)
+
+        # Generate positive and negative samples
+        positive_X, positive_y = generate_positive_samples(df_features, window_size=500, overlap=0.5)
+        negative_X, negative_y = generate_negative_samples(df_features, window_size=500, overlap=0.5)
+
+        # Combine positive and negative samples
+        X = pd.concat([positive_X, negative_X], ignore_index=True)
+        y = pd.concat([positive_y, negative_y], ignore_index=True)
+
+        all_features.append(X)
+        all_labels.append(y)
+
+    # Combine all features and labels from all files
+    combined_X = pd.concat(all_features, ignore_index=True)
+    combined_y = pd.concat(all_labels, ignore_index=True)
+
+    logging.info(f"Total samples: {len(combined_y)}")
+    logging.info(f"Positive samples: {(combined_y == 1).sum()}")
+    logging.info(f"Negative samples: {(combined_y == 0).sum()}")
+
+    # Ensure there are samples for both classes
+    if combined_y.nunique() < 2:
+        logging.error("Dataset does not contain both positive and negative samples. Exiting.")
+        sys.exit(1)
+
+    # Train model
+    model, scaler = train_model(combined_X, combined_y)
+
+    # Optionally, save the trained model and scaler for future use
+    # import joblib
+    # joblib.dump(model, f"{planet}_random_forest_model.joblib")
+    # joblib.dump(scaler, f"{planet}_scaler.joblib")
+    # logging.info(f"Model and scaler saved for {planet}.")
+
 
 if __name__ == "__main__":
     main()
