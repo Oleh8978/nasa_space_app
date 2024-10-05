@@ -183,6 +183,61 @@ def extract_features(data, planet_props):
 
     return data, events, dynamic_threshold
 
+def generate_negative_samples(data, window_size=500, overlap=0.5):
+    """
+    Generate negative samples by selecting windows with no detected events.
+    """
+    step = int(window_size * (1 - overlap))
+    windows = []
+    labels = []
+    num_samples = len(data)
+
+    for start in range(0, num_samples - window_size + 1, step):
+        end = start + window_size
+        window = data.iloc[start:end]
+        if window['event_detected'].sum() == 0:
+            # Extract aggregated features for the window
+            agg_feat = {
+                'mean_normalized_amplitude': window['normalized_amplitude'].mean(),
+                'std_normalized_amplitude': window['normalized_amplitude'].std(),
+                'mean_sta_lta': window['sta_lta'].mean(),
+                'std_sta_lta': window['sta_lta'].std(),
+                'event_detected_count': window['event_detected'].sum()
+            }
+            windows.append(agg_feat)
+            labels.append(0)  # Negative sample
+
+    logging.info(f"Generated {len(windows)} negative samples.")
+    return pd.DataFrame(windows), pd.Series(labels)
+
+def generate_positive_samples(data, window_size=500, overlap=0.5):
+    """
+    Generate positive samples by selecting windows with at least one detected event.
+    """
+    step = int(window_size * (1 - overlap))
+    windows = []
+    labels = []
+    num_samples = len(data)
+
+    for start in range(0, num_samples - window_size + 1, step):
+        end = start + window_size
+        window = data.iloc[start:end]
+        if window['event_detected'].sum() > 0:
+            # Extract aggregated features for the window
+            agg_feat = {
+                'mean_normalized_amplitude': window['normalized_amplitude'].mean(),
+                'std_normalized_amplitude': window['normalized_amplitude'].std(),
+                'mean_sta_lta': window['sta_lta'].mean(),
+                'std_sta_lta': window['sta_lta'].std(),
+                'event_detected_count': window['event_detected'].sum()
+            }
+            windows.append(agg_feat)
+            labels.append(1)  # Positive sample
+
+    logging.info(f"Generated {len(windows)} positive samples.")
+    return pd.DataFrame(windows), pd.Series(labels)
+
+
 def main():
     pass
 
