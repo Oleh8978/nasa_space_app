@@ -284,6 +284,97 @@ def train_model(X, y):
 
     return model, scaler
 
+def plot_seismic_data_per_file(data, events, dynamic_threshold, filename, planet, scaling_factor=1e26, max_points=100000):
+    """Plot the seismic data and detected events for a single CSV file using Plotly."""
+    try:
+        logging.info(f"Plotting data for file: {filename}")
+
+        # Convert 'time' to datetime and set it as index
+        data['time'] = pd.to_datetime(data['time'])
+        data.set_index('time', inplace=True)
+
+        # Log data shape
+        logging.debug(f"Data shape for plotting: {data.shape}")
+
+        # Scale normalized_amplitude for plotting
+        data['normalized_amplitude_scaled'] = data['normalized_amplitude'] * scaling_factor
+
+        # Log scaled normalized amplitude stats
+        logging.debug(f"Scaled Normalized Amplitude Stats: min={data['normalized_amplitude_scaled'].min()}, max={data['normalized_amplitude_scaled'].max()}, mean={data['normalized_amplitude_scaled'].mean()}, std={data['normalized_amplitude_scaled'].std()}")
+
+        # Subsample data if too large
+        if len(data) > max_points:
+            logging.warning(f"Data has {len(data)} points, which is more than the maximum allowed {max_points}. Subsampling.")
+            data = data.sample(n=max_points, random_state=42).sort_index()
+
+        # Create a figure with subplots
+        fig = make_subplots(rows=3, cols=1,
+                            shared_xaxes=True,
+                            subplot_titles=(f'{planet} Seismic Data - Normalized Amplitude (Scaled)',
+                                            f'{planet} Seismic Data - STA/LTA Ratio',
+                                            f'{planet} Seismic Data - Detected Events'),
+                            vertical_spacing=0.05)
+
+        # Plot normalized amplitude (scaled)
+        fig.add_trace(
+            go.Scatter(x=data.index, y=data['normalized_amplitude_scaled'], mode='lines', name='Normalized Amplitude (Scaled)', line=dict(color='blue')),
+            row=1, col=1
+        )
+
+        # Plot STA/LTA
+        fig.add_trace(
+            go.Scatter(x=data.index, y=data['sta_lta'], mode='lines', name='STA/LTA Ratio', line=dict(color='orange')),
+            row=2, col=1
+        )
+        fig.add_trace(
+            go.Scatter(x=data.index, y=[data['sta_lta'].mean()] * len(data), mode='lines', name='Mean STA/LTA', line=dict(color='green', dash='dash')),
+            row=2, col=1
+        )
+
+        # Plot detected events
+        event_times = events[events == 1].index
+        event_values = [data['sta_lta'].max()] * len(event_times)
+        fig.add_trace(
+            go.Scatter(x=event_times, y=event_values, mode='markers', name='Detected Events', marker=dict(color='red', size=10)),
+            row=3, col=1
+        )
+
+        # Update layout for better interactivity
+        fig.update_layout(
+            height=900,
+            width=1200,
+            title_text=f'{planet} Seismic Data Analysis - {filename}',
+            showlegend=True
+        )
+
+        # Update x-axis to show date format with range slider and buttons
+        fig.update_xaxes(
+            rangeslider_visible=True,
+            rangeselector=dict(
+                buttons=list([
+                    dict(count=1, label="1h", step="hour", stepmode="backward"),
+                    dict(count=6, label="6h", step="hour", stepmode="backward"),
+                    dict(count=1, label="1d", step="day", stepmode="backward"),
+                    dict(step="all")
+                ])
+            ),
+            tickformat='%Y-%m-%d %H:%M',
+            row=3, col=1
+        )
+
+        # Add y-axis titles
+        fig.update_yaxes(title_text="Normalized Amplitude (Scaled)", row=1, col=1)
+        fig.update_yaxes(title_text="STA/LTA Ratio", row=2, col=1)
+        fig.update_yaxes(title_text="Detected Events", row=3, col=1)
+
+        # Save the plot to an HTML file
+        html_filename = f"html_plots/{planet}/{planet}_seismic_data_plot_{os.path.splitext(os.path.basename(filename))[0]}.html"
+        fig.write_html(html_filename)
+        logging.info(f"Plot saved to {html_filename}")
+
+    except Exception as e:
+        logging.error(f"Error in plot_seismic_data_per_file for {filename}: {e}")
+
 
 def main():
     pass
