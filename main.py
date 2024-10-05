@@ -129,6 +129,44 @@ def parse_arguments():
     args = parser.parse_args()
     return args
 
+
+def calculate_sta_lta(data, sta_window=10, lta_window=100):
+    """Calculate the Short-Term Average (STA) to Long-Term Average (LTA) ratio using normalized amplitudes."""
+    # Use normalized amplitude for STA/LTA
+    sta = data['normalized_amplitude'].rolling(window=sta_window, min_periods=1).mean()
+    lta = data['normalized_amplitude'].rolling(window=lta_window, min_periods=1).mean()
+    
+    # Replace zeros in LTA to avoid division by zero
+    lta.replace(0, np.nan, inplace=True)
+    
+    # Calculate STA/LTA ratio
+    sta_lta = sta / lta
+    
+    # Replace NaN with 0
+    sta_lta = sta_lta.fillna(0)
+    
+    # Log STA/LTA statistics
+    logging.debug(f"STA/LTA Stats: min={sta_lta.min()}, max={sta_lta.max()}, mean={sta_lta.mean()}, std={sta_lta.std()}")
+    
+    # Ensure 'sta_lta' has no negative values
+    if (sta_lta < 0).any():
+        logging.error("Negative values detected in STA/LTA ratio, which should not occur.")
+        raise ValueError("Negative STA/LTA ratios found.")
+    
+    return sta_lta
+
+def detect_seismic_events(sta_lta, threshold, refractory_period=10):
+    """Detect seismic events where STA/LTA ratio exceeds the threshold."""
+    events = []
+    last_event = -refractory_period
+    for i, value in enumerate(sta_lta):
+        if value > threshold and (i - last_event) > refractory_period:
+            events.append(1)
+            last_event = i
+        else:
+            events.append(0)
+    return pd.Series(events, index=sta_lta.index)
+
 def main():
     pass
 
